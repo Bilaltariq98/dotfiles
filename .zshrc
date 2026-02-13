@@ -19,6 +19,13 @@ setopt AUTO_CD                # cd by just typing dir name
 setopt INTERACTIVE_COMMENTS   # allow # comments in interactive shell
 setopt NO_BEEP
 
+# WHY: zsh's default WORDCHARS includes / and other symbols, so Ctrl+Arrow
+# and Ctrl+Backspace treat ~/Documents/personal/Github as ONE word.
+# Removing / - . makes word boundaries stop at path separators, hyphens,
+# and dots — matching how text editors behave.
+# Default WORDCHARS: *?_-.[]~=/&;!#$%^(){}<>
+WORDCHARS='*?_[]~=&;!#$%^(){}<>'
+
 # ---------------------------------------------------------------------------
 # Completion (lightweight — no OMZ compinit bloat)
 # ---------------------------------------------------------------------------
@@ -187,6 +194,13 @@ rbenv() {
 # Plugins (direct source — no OMZ overhead)
 # ---------------------------------------------------------------------------
 # zsh-autosuggestions
+# WHY these settings: Our custom shift-select widgets (deselect-forward-char etc.)
+# replace the default forward-char on Right arrow. zsh-autosuggestions only
+# recognises widgets in its accept list, so we add ours. Without this,
+# Right arrow stops accepting the grey ghost suggestion.
+ZSH_AUTOSUGGEST_ACCEPT_WIDGETS=(forward-char end-of-line deselect-forward-char)
+ZSH_AUTOSUGGEST_PARTIAL_ACCEPT_WIDGETS=(forward-word deselect-forward-word)
+ZSH_AUTOSUGGEST_STRATEGY=(history completion)
 [ -f ~/.oh-my-zsh/custom/plugins/zsh-autosuggestions/zsh-autosuggestions.zsh ] && \
   source ~/.oh-my-zsh/custom/plugins/zsh-autosuggestions/zsh-autosuggestions.zsh
 
