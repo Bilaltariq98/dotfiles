@@ -42,6 +42,64 @@ bindkey -M menuselect 'k' vi-up-line-or-history
 bindkey -M menuselect 'l' vi-forward-char
 
 # ---------------------------------------------------------------------------
+# Shift-select on the command line (like a text editor)
+# ---------------------------------------------------------------------------
+# WHY: zsh doesn't support Shift+Arrow text selection out of the box.
+#      The old zsh-autocomplete plugin provided this, but we removed it
+#      to save ~6ms startup. This reimplements just the shift-select part.
+#
+# HOW: Uses zsh's REGION_ACTIVE and set-mark-command (ZLE visual mode).
+#      On first shift+arrow press, a mark is set at the cursor position.
+#      Subsequent shift+arrow extends the selection. Unmodified arrow
+#      keys clear the selection. Delete/Backspace removes selected text.
+#
+# REQUIRES: Terminal must NOT intercept Shift+Arrow keys.
+#      Ghostty config unbinds shift+arrow from adjust_selection.
+#      See: ~/Library/Application Support/com.mitchellh.ghostty/config
+#
+# REF: https://zsh.sourceforge.io/Doc/Release/Zsh-Line-Editor.html
+#      CSI codes: ;2=Shift ;4=Shift+Alt ;6=Ctrl+Shift
+# ---------------------------------------------------------------------------
+shift-select() {
+  ((REGION_ACTIVE)) || zle set-mark-command
+  zle $1
+}
+for cmd in forward-char backward-char forward-word backward-word \
+           beginning-of-line end-of-line; do
+  eval "shift-select-$cmd() { shift-select $cmd; }"
+  zle -N shift-select-$cmd
+done
+bindkey '^[[1;2C' shift-select-forward-char       # Shift-Right
+bindkey '^[[1;2D' shift-select-backward-char      # Shift-Left
+bindkey '^[[1;6C' shift-select-forward-word       # Ctrl-Shift-Right
+bindkey '^[[1;6D' shift-select-backward-word      # Ctrl-Shift-Left
+bindkey '^[[1;4C' shift-select-forward-word       # Shift-Option-Right (macOS word select)
+bindkey '^[[1;4D' shift-select-backward-word      # Shift-Option-Left  (macOS word select)
+bindkey '^[[1;2H' shift-select-beginning-of-line  # Shift-Home
+bindkey '^[[1;2F' shift-select-end-of-line        # Shift-End
+
+# Deactivate selection on unmodified movement (pressing arrow without shift clears highlight)
+deselect() { REGION_ACTIVE=0; zle $1; }
+for cmd in forward-char backward-char; do
+  eval "deselect-$cmd() { deselect $cmd; }"
+  zle -N deselect-$cmd
+done
+bindkey '^[[C' deselect-forward-char   # Right (clears selection)
+bindkey '^[[D' deselect-backward-char  # Left (clears selection)
+
+# Delete/overwrite selected region (typing or Delete key replaces selection)
+delete-region-or-char() {
+  if ((REGION_ACTIVE)); then
+    zle kill-region
+  else
+    zle delete-char
+  fi
+}
+zle -N delete-region-or-char
+bindkey '^[[3~' delete-region-or-char  # Delete key
+bindkey '^?' backward-delete-char      # Backspace
+
+# ---------------------------------------------------------------------------
 # PATH additions (fast — no evals, no subshells)
 # ---------------------------------------------------------------------------
 typeset -U path  # deduplicate PATH
