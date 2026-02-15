@@ -26,6 +26,13 @@ setopt NO_BEEP
 # Default WORDCHARS: *?_-.[]~=/&;!#$%^(){}<>
 WORDCHARS='*?_[]~=&;!#$%^(){}<>'
 
+# WHY: Ctrl+Backspace doesn't send a consistent signal across terminals.
+# Ghostty sends \x17 via keybind config, but other terminals (Zed, VS Code,
+# iTerm) may send different sequences. Binding all known variants here
+# makes backward-kill-word work everywhere, not just in Ghostty.
+bindkey '^H'    backward-kill-word   # Ctrl-Backspace (some terminals)
+bindkey '^[[3;5~' kill-word          # Ctrl-Delete (forward kill word)
+
 # ---------------------------------------------------------------------------
 # Completion (lightweight — no OMZ compinit bloat)
 # ---------------------------------------------------------------------------
@@ -227,6 +234,7 @@ alias la='eza --icons -a'
 alias lt='eza --icons --tree --level=2'
 alias cat='bat --paging=never'
 alias catp='bat'                              # cat with pager
+alias su='TERM=xterm-256color command su'  # other users lack ghostty terminfo
 alias ..='cd ..'
 alias ...='cd ../..'
 
