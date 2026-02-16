@@ -1,0 +1,34 @@
+## Atuin config — shell history
+## Install location: ~/.config/atuin/config.toml
+## Docs: https://docs.atuin.sh/configuration/config/
+
+## UI
+style = "auto"
+invert = true
+show_numeric_shortcuts = false
+show_help = true
+show_tabs = true
+enter_accept = true
+
+## Secret filtering — prevent sensitive commands from being recorded
+## Built-in: catches AWS key IDs, GitHub PATs, Slack tokens, Stripe keys
+secrets_filter = true
+
+## Custom filters for additional secret patterns
+history_filter = [
+  "sk-ant-api",
+  "sk-proj-",
+  "SG\\.[a-zA-Z0-9_-]",
+  "TWILIO_AUTH_TOKEN=",
+  "client_secret=",
+  "grant_type=password",
+  "export\\s+(API_KEY|SECRET|.*_TOKEN|.*_SECRET|.*_API_KEY|ANTHROPIC_API_KEY|LLM_API_KEY)=\\S",
+]
+
+## Sync
+[sync]
+records = true
+
+## UI columns
+[ui]
+columns = ["duration", "time", "command"]

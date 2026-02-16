@@ -8,8 +8,12 @@ Minimal, fast zsh config (~60ms startup). Replaces Oh My Zsh + Powerlevel10k.
 |------|---------|---------|
 | **Starship** | Prompt with git status, Nerd Font icons | `brew install starship` |
 | **eza** | Modern `ls` with icons and colors | `brew install eza` |
+| **bat** | Modern `cat` with syntax highlighting | `brew install bat` |
 | **atuin** | Shell history — single source of truth | `brew install atuin` |
 | **fzf** | Fuzzy file picker — `Ctrl-T`, completion | `brew install fzf` |
+| **zoxide** | Smarter `cd` that learns your directories | `brew install zoxide` |
+| **fd** | Modern `find` — fast, respects `.gitignore` | `brew install fd` |
+| **delta** | Beautiful git diffs with syntax highlighting | `brew install git-delta` |
 | **zsh-autosuggestions** | Fish-like inline suggestions | git clone (see below) |
 | **fast-syntax-highlighting** | Command syntax coloring | git clone (see below) |
 
@@ -19,34 +23,53 @@ Minimal, fast zsh config (~60ms startup). Replaces Oh My Zsh + Powerlevel10k.
 # 1. Install Homebrew
 /bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)"
 
-# 2. Install core tools
-brew install starship eza fzf atuin
+# 2. Install a Nerd Font (required for icons in starship + eza)
+brew install --cask font-meslo-lg-nerd-font
+# Then set your terminal font to "MesloLGS Nerd Font" (or your preferred Nerd Font)
 
-# 3. Create plugin directory
+# 3. Install core tools
+brew install starship eza bat fzf atuin zoxide fd git-delta
+
+# 4. Create plugin directory
 mkdir -p ~/.oh-my-zsh/custom/plugins
 
-# 4. Install plugins
+# 5. Install plugins
 git clone https://github.com/zsh-users/zsh-autosuggestions ~/.oh-my-zsh/custom/plugins/zsh-autosuggestions
 git clone https://github.com/zdharma-continuum/fast-syntax-highlighting ~/.oh-my-zsh/custom/plugins/fast-syntax-highlighting
 
-# 5. Copy config files
+# 6. Copy config files
 cp .zshrc ~/.zshrc
 cp .zprofile ~/.zprofile
 cp .zshenv ~/.zshenv
 mkdir -p ~/.config
 cp starship.toml ~/.config/starship.toml
+mkdir -p ~/.config/atuin
+cp atuin-config.toml ~/.config/atuin/config.toml
 
-# 6. Fix Homebrew completion permissions (prevents compaudit warning)
+# 7. Configure git to use delta
+git config --global core.pager delta
+git config --global interactive.diffFilter 'delta --color-only'
+git config --global delta.navigate true
+git config --global delta.side-by-side true
+git config --global delta.line-numbers true
+git config --global merge.conflictStyle diff3
+git config --global diff.colorMoved default
+
+# 8. Copy Ghostty config (if using Ghostty terminal)
+mkdir -p ~/Library/Application\ Support/com.mitchellh.ghostty
+cp ghostty.config ~/Library/Application\ Support/com.mitchellh.ghostty/config
+
+# 9. Fix Homebrew completion permissions (prevents compaudit warning)
 chmod 755 /opt/homebrew/share/zsh/site-functions /opt/homebrew/share/zsh
 
-# 7. IMPORTANT: scrub secrets from zsh_history BEFORE importing into atuin
-#    (atuin import does not apply secrets_filter — it imports everything)
+# 10. IMPORTANT: scrub secrets from zsh_history BEFORE importing into atuin
+#     (atuin import does not apply secrets_filter — it imports everything)
 brew install trufflehog
 trufflehog filesystem ~/.zsh_history          # review what's there
 # manually remove flagged lines, then:
 atuin import auto
 
-# 8. Restart shell
+# 11. Restart shell
 exec zsh
 ```
 
@@ -173,6 +196,9 @@ noseyparker scan -d /tmp/np . && noseyparker report -d /tmp/np  # scan current d
 | `ll` | `eza --icons -la` |
 | `la` | `eza --icons -a` |
 | `lt` | `eza --icons --tree --level=2` |
+| `cat` | `bat --paging=never` |
+| `catp` | `bat` (with pager) |
+| `su` | `TERM=xterm-256color command su` (Ghostty terminfo compat) |
 | `..` | `cd ..` |
 | `...` | `cd ../..` |
 
@@ -233,9 +259,9 @@ Prevention (already configured in `~/.config/atuin/config.toml`):
 | `~/.zshenv` | Env vars loaded for all shells (cargo) |
 | `~/.config/starship.toml` | Prompt configuration |
 | `~/.config/atuin/config.toml` | Atuin config (filters, search mode, sync) |
+| `~/Library/Application Support/com.mitchellh.ghostty/config` | Ghostty terminal config |
 | `~/.local/share/atuin/history.db` | Atuin history database (SQLite) |
 | `~/.zsh-setup/` | This directory — portable config + docs |
-| `~/.zsh-backup-20260213-122127/` | Pre-optimization backup of original dotfiles |
 
 ## Roadmap: secret leak prevention
 
@@ -279,6 +305,10 @@ sqlite3 ~/.local/share/atuin/history.db \
   "DELETE FROM history WHERE command LIKE '%PATTERN%';"
 ```
 
-## Optional upgrades
+## Optional tools
 
-- **zoxide** (`brew install zoxide`) — smarter `cd` that learns your frequent directories. Add `eval "$(zoxide init zsh)"` to .zshrc.
+These are referenced in the `.zshrc` but guarded — they won't error if missing:
+
+- **Rust/cargo** — `.zshenv` sources `~/.cargo/env` if present. Install: `curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh`
+- **OrbStack** — `.zprofile` sources its init if present. Install from [orbstack.dev](https://orbstack.dev)
+- **safe-chain** — supply chain protection for npm/bun/pip. Sourced with `2>/dev/null` guard.
