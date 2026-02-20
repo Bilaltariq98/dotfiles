@@ -145,27 +145,37 @@ export REVIEW_BASE="main"
 # ---------------------------------------------------------------------------
 export NVM_DIR="$HOME/.nvm"
 
-nvm() {
+_nvm_lazy_load() {
   unfunction nvm node npm npx 2>/dev/null
   [ -s "$NVM_DIR/nvm.sh" ] && \. "$NVM_DIR/nvm.sh"
+
+  # Auto-select default Node if an alias exists; otherwise respect .nvmrc.
+  if command -v nvm >/dev/null 2>&1; then
+    if nvm alias default >/dev/null 2>&1; then
+      nvm use --silent default >/dev/null 2>&1
+    elif [ -f .nvmrc ]; then
+      nvm use --silent >/dev/null 2>&1
+    fi
+  fi
+}
+
+nvm() {
+  _nvm_lazy_load
   nvm "$@"
 }
 
 node() {
-  unfunction nvm node npm npx 2>/dev/null
-  [ -s "$NVM_DIR/nvm.sh" ] && \. "$NVM_DIR/nvm.sh"
+  _nvm_lazy_load
   node "$@"
 }
 
 npm() {
-  unfunction nvm node npm npx 2>/dev/null
-  [ -s "$NVM_DIR/nvm.sh" ] && \. "$NVM_DIR/nvm.sh"
+  _nvm_lazy_load
   npm "$@"
 }
 
 npx() {
-  unfunction nvm node npm npx 2>/dev/null
-  [ -s "$NVM_DIR/nvm.sh" ] && \. "$NVM_DIR/nvm.sh"
+  _nvm_lazy_load
   npx "$@"
 }
 
